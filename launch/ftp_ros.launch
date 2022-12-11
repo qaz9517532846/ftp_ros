@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="ftp_ros" type="ftp_ros" respawn="false" name="ftp_ros" output="screen">
+    <param name = "ip_address" value = "127.0.0.1" />
+    <param name = "port" value = "22" />
+    <param name = "username" value = "zmtech" />
+    <param name = "passwd" value = "zmtech" />
+  </node>
+</launch>
