@@ -141,6 +141,7 @@ int SSH_Login(const char* username, const char* pwd)
 int SSH_FTP_Recieved(const char* filename, char* content, int *size)
 {
     int rc = 0;
+    int timeoutCNT = 0;
     struct timeval timeout;
     fd_set fd;
     fd_set fd2;
@@ -148,7 +149,7 @@ int SSH_FTP_Recieved(const char* filename, char* content, int *size)
     rc = SSH_FTP_Initial();
     if(rc >= 0)
     {
-        while(!sftp_handle)
+        while(!sftp_handle && timeoutCNT < 5)
         {
             sftp_handle = libssh2_sftp_open(sftp_session, filename, LIBSSH2_FXF_READ, 0);
  
@@ -166,16 +167,16 @@ int SSH_FTP_Recieved(const char* filename, char* content, int *size)
                 printf("non-blocking open\n");
                 rc = WaitSocket(sock, session); /* now we wait */ 
             }
+
+            sleep(1);
+            timeoutCNT++;
         }
     }
 
-    printf("rc = %d\n", rc);
-
-    while(1)
+    while(sftp_handle)
     {
 
         rc = libssh2_sftp_read(sftp_handle, content, sizeof(content));
-        printf("libssh2_sftp_read returned %d, %s\n", rc, content);
 
         *size = sizeof(content);
  
@@ -199,6 +200,8 @@ int SSH_FTP_Recieved(const char* filename, char* content, int *size)
             printf("SFTP download timed out: %d\n", rc);
             break;
         }
+
+        sleep(1);
     };
 
     return rc;
@@ -208,16 +211,22 @@ int SSH_FTP_Send(const char* filename, char* content, size_t size)
 {
     int rc = 0;
     struct timeval timeout;
+    int timeoutCNT = 0;
     fd_set fd;
     fd_set fd2;
 
     rc = SSH_FTP_Initial();
-    if(rc == 0)
+    if(rc >= 0)
     {
-        sftp_handle = libssh2_sftp_open(sftp_session, filename, LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT,
+        while(!sftp_handle && timeoutCNT < 5)
+        {
+            sftp_handle = libssh2_sftp_open(sftp_session, filename, LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT,
                                                         LIBSSH2_SFTP_S_IRUSR|LIBSSH2_SFTP_S_IWUSR|
                                                         LIBSSH2_SFTP_S_IRGRP|LIBSSH2_SFTP_S_IROTH);
-
+            timeoutCNT++;
+            sleep(1);
+        }
+        
         if(sftp_handle)
         {
             while(1)
@@ -244,6 +253,8 @@ int SSH_FTP_Send(const char* filename, char* content, size_t size)
                     printf("SFTP upload timed out: %d\n", rc);
                     break;
                 }
+
+                sleep(1);
             }
             printf("SFTP upload done!\n");
         }

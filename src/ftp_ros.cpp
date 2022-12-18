@@ -32,7 +32,6 @@ bool ftpROS::ftp_file(ftp_ros::ftpFile::Request &req, ftp_ros::ftpFile::Response
 {
     int rc = -1, size = 0;
     char content[BUFFER_SIZE];
-    ROS_INFO("Call Service.");
     if(req.mode == "send")
     {
         size = FileRead(req.srcPath, content);
